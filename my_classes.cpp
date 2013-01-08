@@ -725,242 +725,36 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	double vert_mass = 0.018;
 	double head_mass = 0.35;//PARAMS[4];
 	
-	////Remove forces from osimModel so correct number of forces remain in the model
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
-	osimModel.updForceSet().remove(1);
+	o1 = Vec3(0,0,PARAMS[3]); // bushing offset
 
-	
-	OpenSim::Force *limit1 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("t1Tot2_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit1);
-	OpenSim::Force *limit2 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c7Tot1_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit2);
-	OpenSim::Force *limit3 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c6Toc7_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit3);
-	OpenSim::Force *limit4 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c5Toc6_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit4);
-	OpenSim::Force *limit5 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c4Toc5_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit5);
-	OpenSim::Force *limit6 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c3Toc4_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit6);
-	OpenSim::Force *limit7 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c2Toc3_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit7);
-	OpenSim::Force *limit8 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c1Toc2_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit8);
-	OpenSim::Force *limit9 = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("skToc1_FE").getName(),ThetaStar,k2,-ThetaStar,k2,0,transition);
-	osimModel.addForce(limit9);
-	
-	//k2 = 50000;
-	//transition = 1e-6;
-	//ThetaStar = 10;
-	//Rdamping[0] = 1000;
-	//double k2a = 10;
-	//OpenSim::Force *limit1s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("t1Tot2_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit1s);
-	//OpenSim::Force *limit2s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c7Tot1_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit2s);
-	//OpenSim::Force *limit3s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c6Toc7_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit3s);
-	//OpenSim::Force *limit4s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c5Toc6_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit4s);
-	//OpenSim::Force *limit5s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c4Toc5_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit5s);
-	//OpenSim::Force *limit6s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c3Toc4_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit6s);
-	//OpenSim::Force *limit7s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c2Toc3_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit7s);
-	//OpenSim::Force *limit8s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("c1Toc2_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit8s);
-	//OpenSim::Force *limit9s = new OpenSim::CoordinateLimitForce(osimModel.updCoordinateSet().get("skToc1_stretch").getName(),0,k2,-ThetaStar,k2a,Rdamping[0],transition);
-	//osimModel.addForce(limit9s);
-
-
-	////////////////////////////////////////////////////////////////////////////////////////////
-	//// CORRECT BUSHING PROPERTIES
-	////Create new bushing forces and add to model
-	////t2-t1 joint
-	//p1bushing = osimModel.updJointSet().get("t1Tot2").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("t1Tot2").upd_location();
-	//o1 = osimModel.updJointSet().get("t1Tot2").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("t1Tot2").upd_orientation();
-	//OpenSim::BushingForce* t2t1 = new OpenSim::BushingForce("t2",p1bushing,o1,"t1",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//t2t1->setName("t2t1_bushing");
-	//osimModel.addForce(t2t1);
-	//
-	//p1bushing = osimModel.updJointSet().get("c7Tot1").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c7Tot1").upd_location();
-	//o1 = osimModel.updJointSet().get("c7Tot1").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("c7Tot1").upd_orientation();
-	////t1-c7 joint
-	//OpenSim::BushingForce* t1c7 = new OpenSim::BushingForce("t1",p1bushing,o1,"c7",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//t1c7->setName("t1c7_bushing");
-	//osimModel.addForce(t1c7);
-	//
-	//p1bushing = osimModel.updJointSet().get("c6Toc7").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c6Toc7").upd_location();
-	//o1 = osimModel.updJointSet().get("c6Toc7").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("c6Toc7").upd_orientation();
-	////c7-c6 joint
-	//OpenSim::BushingForce* c7c6 = new OpenSim::BushingForce("c7",p1bushing,o1,"c6",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//c7c6->setName("c7c6_bushing");
-	//osimModel.addForce(c7c6);
-
-	//p1bushing = osimModel.updJointSet().get("c5Toc6").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c5Toc6").upd_location();
-	//o1 = osimModel.updJointSet().get("c5Toc6").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("c5Toc6").upd_orientation();
-	////c6-c5 joint
-	//OpenSim::BushingForce* c6c5 = new OpenSim::BushingForce("c6",p1bushing,o1,"c5",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//c6c5->setName("c6c5_bushing");
-	//osimModel.addForce(c6c5);
-
-	//p1bushing = osimModel.updJointSet().get("c4Toc5").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c4Toc5").upd_location();
-	//o1 = osimModel.updJointSet().get("c4Toc5").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("c4Toc5").upd_orientation();
-	////c5-c4 joint
-	//OpenSim::BushingForce* c5c4 = new OpenSim::BushingForce("c5",p1bushing,o1,"c4",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//c5c4->setName("c5c4_bushing");
-	//osimModel.addForce(c5c4);
-
-	//p1bushing = osimModel.updJointSet().get("c3Toc4").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c3Toc4").upd_location();
-	//o1 = osimModel.updJointSet().get("c3Toc4").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("c3Toc4").upd_orientation();
-	////c4-c3 joint
-	//OpenSim::BushingForce* c4c3 = new OpenSim::BushingForce("c4",p1bushing,o1,"c3",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//c4c3->setName("c4c3_bushing");
-	//osimModel.addForce(c4c3);
-
-	//p1bushing = osimModel.updJointSet().get("c2Toc3").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c2Toc3").upd_location();
-	//o1 = osimModel.updJointSet().get("c2Toc3").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("c2Toc3").upd_orientation();
-	////c3-c2 joint
-	//OpenSim::BushingForce* c3c2 = new OpenSim::BushingForce("c3",p1bushing,o1,"c2",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//c3c2->setName("c3c2_bushing");
-	//osimModel.addForce(c3c2);
-
-	//p1bushing = osimModel.updJointSet().get("c1Toc2").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c1Toc2").upd_location();
-	//o1 = osimModel.updJointSet().get("c1Toc2").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("c1Toc2").upd_orientation();
-	////c2-c1 joint
-	//OpenSim::BushingForce* c2c1 = new OpenSim::BushingForce("c2",p1bushing,o1,"c1",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//c2c1->setName("c2c1_bushing");
-	//osimModel.addForce(c2c1);
-
-	//p1bushing = osimModel.updJointSet().get("skToc1").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("skToc1").upd_location();
-	//o1 = osimModel.updJointSet().get("skToc1").upd_orientation_in_parent();
-	//o2 = osimModel.updJointSet().get("skToc1").upd_orientation();
-	////c1-sk joint
-	//OpenSim::BushingForce* c1sk = new OpenSim::BushingForce("c1",p1bushing,o1,"sk",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	//c1sk->setName("c1sk_bushing");
-	//osimModel.addForce(c1sk);		
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//Create new bushing forces and add to model
-	o1 = Vec3(0,0,PARAMS[3]);
-
-	//t2-t1 joint
-	//p1bushing = osimModel.updJointSet().get("t1Tot2").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("t1Tot2").upd_location();
-	//o1 = -osimModel.updJointSet().get("t1Tot2").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("t1Tot2").upd_orientation();
 	OpenSim::BushingForce* t2t1 = new OpenSim::BushingForce("t2",p1bushing,o1,"t1",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	t2t1->setName("t2t1_bushing");
-	osimModel.addForce(t2t1);
-	
-	//p1bushing = osimModel.updJointSet().get("c7Tot1").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c7Tot1").upd_location();
-	////o1 = -osimModel.updJointSet().get("c7Tot1").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("c7Tot1").upd_orientation();
-	//t1-c7 joint
-	OpenSim::BushingForce* t1c7 = new OpenSim::BushingForce("t1",p1bushing,o1,"c7",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	t1c7->setName("t1c7_bushing");
-	osimModel.addForce(t1c7);
-	
-	//p1bushing = osimModel.updJointSet().get("c6Toc7").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c6Toc7").upd_location();
-	////o1 = -osimModel.updJointSet().get("c6Toc7").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("c6Toc7").upd_orientation();
-	//c7-c6 joint
-	OpenSim::BushingForce* c7c6 = new OpenSim::BushingForce("c7",p1bushing,o1,"c6",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	c7c6->setName("c7c6_bushing");
-	osimModel.addForce(c7c6);
-
-	//p1bushing = osimModel.updJointSet().get("c5Toc6").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c5Toc6").upd_location();
-	////o1 = -osimModel.updJointSet().get("c5Toc6").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("c5Toc6").upd_orientation();
-	//c6-c5 joint
-	OpenSim::BushingForce* c6c5 = new OpenSim::BushingForce("c6",p1bushing,o1,"c5",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	c6c5->setName("c6c5_bushing");
-	osimModel.addForce(c6c5);
-
-	//p1bushing = osimModel.updJointSet().get("c4Toc5").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c4Toc5").upd_location();
-	////o1 = -osimModel.updJointSet().get("c4Toc5").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("c4Toc5").upd_orientation();
-	//c5-c4 joint
-	OpenSim::BushingForce* c5c4 = new OpenSim::BushingForce("c5",p1bushing,o1,"c4",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	c5c4->setName("c5c4_bushing");
-	osimModel.addForce(c5c4);
-
-	//p1bushing = osimModel.updJointSet().get("c3Toc4").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c3Toc4").upd_location();
-	////o1 = -osimModel.updJointSet().get("c3Toc4").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("c3Toc4").upd_orientation();
-	//c4-c3 joint
-	OpenSim::BushingForce* c4c3 = new OpenSim::BushingForce("c4",p1bushing,o1,"c3",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	c4c3->setName("c4c3_bushing");
-	osimModel.addForce(c4c3);
-
-	//p1bushing = osimModel.updJointSet().get("c2Toc3").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c2Toc3").upd_location();
-	////o1 = -osimModel.updJointSet().get("c2Toc3").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("c2Toc3").upd_orientation();
-	//c3-c2 joint
-	OpenSim::BushingForce* c3c2 = new OpenSim::BushingForce("c3",p1bushing,o1,"c2",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	c3c2->setName("c3c2_bushing");
-	osimModel.addForce(c3c2);
-
-	//p1bushing = osimModel.updJointSet().get("c1Toc2").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("c1Toc2").upd_location();
-	////o1 = -osimModel.updJointSet().get("c1Toc2").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("c1Toc2").upd_orientation();
-	//c2-c1 joint
-	OpenSim::BushingForce* c2c1 = new OpenSim::BushingForce("c2",p1bushing,o1,"c1",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	c2c1->setName("c2c1_bushing");
-	osimModel.addForce(c2c1);
-
-	//p1bushing = osimModel.updJointSet().get("skToc1").upd_location_in_parent();
-	//p2bushing = osimModel.updJointSet().get("skToc1").upd_location();
-	////o1 = -osimModel.updJointSet().get("skToc1").upd_orientation_in_parent();
-	//o2 = -osimModel.updJointSet().get("skToc1").upd_orientation();
-	//c1-sk joint
-	OpenSim::BushingForce* c1sk = new OpenSim::BushingForce("c1",p1bushing,o1,"sk",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
-	c1sk->setName("c1sk_bushing");
-	osimModel.addForce(c1sk);		
 
 
-	// mass properties
+
+	// obtain pointer to model forces
+	OpenSim::ForceSet& force_set = osimModel.updForceSet();
+
+	// change limit force properties
+	for (int i = 0; i<9; i++){
+		
+		//((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setDamping(0);
+		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setUpperLimit(ThetaStar);
+		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setLowerLimit(-ThetaStar);
+		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setUpperStiffness(k2);
+		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setLowerStiffness(k2);
+		//((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setTransition(transition);
+
+	}
+
+	// change linear stiffness of bushing
+	for (int i = 9; i<18; i++){
+
+		((OpenSim::BushingForce*)&force_set.get(i))->set_rotational_stiffness(k1);
+		((OpenSim::BushingForce*)&force_set.get(i))->set_orientation_body_1(o1); // chnage bushing offset
+	}
+
+
+	// set mass properties
 	osimModel.updBodySet().get("sk").setMass(head_mass);
 	osimModel.updBodySet().get("t2").setMass(vert_mass);
 	osimModel.updBodySet().get("t1").setMass(vert_mass);
@@ -974,7 +768,7 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
-	osimModel.print("T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/Version8/Version8_constrainedwFORCES_FLEX.osim");
+	osimModel.print("T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/OpenSim new versions (from Version10)/OpenSim Output/OSIM_constrainedwFORCES_FLEX.osim");
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
 	
 	// Initialise and run simulation

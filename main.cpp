@@ -73,7 +73,7 @@ int main()
 		
 		//FLEXION
 		string expt_file = "l2flexv2";
-		osim_filename = osim_filename.append(osim_fd).append("OSIM_contrained.osim"); // for flex	
+		osim_filename = osim_filename.append(osim_fd).append("OSIM_constrainedwFORCES.osim"); // for flex	
 		//Open existing XML model
 		Model osimModel(osim_filename); 
 		osimModel.printBasicInfo(cout);		
@@ -346,7 +346,7 @@ int main()
 		// - Theta_STAR
 		// - k1		
 		// - k2
-		// - damping
+		// - bushing offset
 		
 		MyOptimizerSystem sys(numParams,osimModel,data_trc,ti,tf,ICs,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h,output_fd);
 
@@ -371,7 +371,7 @@ int main()
 		//lower_bounds[3] = 0.5;
 		//upper_bounds[3] = 30;
 
-		//head mass
+		//bushing offset
 		lower_bounds[3] = -2.0;
 		upper_bounds[3] = 2.0;
 
@@ -396,7 +396,7 @@ int main()
 		guess[0] = 6.82;//6.00553; // theta star (degrees)
 		guess[1] = 1.22; // k1 (N*m/degree)
 		guess[2] = 7.29; // k2 (N*m/degree)
-		guess[3] = 0.22;//0.409055; // damping (Nm/(deg/sec))
+		guess[3] = 0.22;//0.409055; // bushing offset
 		//guess[4] = 0.0; // head mass
 		//		guess[4] = 45; // theta star sk (degrees)
 		//guess[5] = guess[1]; // k1 sk (N*m/degree)
