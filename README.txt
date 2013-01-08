@@ -1,6 +1,8 @@
 Tom Lintern
 8/1/2013
 
-Code that was used for CMBBE conference in UTAH and Standfard presentation.
+Memory leak fixed when chanigng force properties in model.
 
-USE AS STARTING POINT FOR NEW WORK.
+Done by accessing existing model forces and casting them to be bushing or limit forces respectively.
+
+Code is set up to reproduce results from CMBBE conference abstract.
