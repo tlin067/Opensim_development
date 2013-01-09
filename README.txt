@@ -1,8 +1,10 @@
 Tom Lintern
-8/1/2013
+9/1/2013
 
-Memory leak fixed when chanigng force properties in model.
+Code to create single joint model in plane. Therefore;
 
-Done by accessing existing model forces and casting them to be bushing or limit forces respectively.
+fx = f(dx,dy,dxdy)
+fy = f(dx,dy,dxdy)
+T = f(theta)
 
-Code is set up to reproduce results from CMBBE conference abstract.
+nb. some independence is assummed

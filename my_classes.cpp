@@ -705,18 +705,9 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	Vec3 k1(PARAMS[1]);
 	double k2 = PARAMS[2]*SimTK::Pi/180;
 	Vec3 Rdamping(10);//PARAMS[3]);
-
-	//double ThetaStar_sk = PARAMS[4];
-	//Vec3 k1_sk(PARAMS[5]);
-	//double k2_sk = PARAMS[6]*SimTK::Pi/180;
-	
-
 	Vec3 Tk1(0); // translational dof stiffness
 	Vec3 Tdamping(0);//PARAMS[3]); // translational dof damping
 	
-
-	//// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
-	//// ADD BUSHING FORCES WITH SPECIFIED PROPERTIES
 	//// Define position in body 1 (p1), position in body 2 (p2), orientation in body 1 (o1), orientation in  body 2 (o2)
 	//// These are position and orientation os joints wrt bodies. Can set to be constant throughout...
 	Vec3 p1bushing(0),p2bushing(0),o1(0),o2(0);
@@ -735,7 +726,7 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	OpenSim::ForceSet& force_set = osimModel.updForceSet();
 
 	// change limit force properties
-	for (int i = 0; i<9; i++){
+	for (int i = 0; i<1; i++){
 		
 		//((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setDamping(0);
 		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setUpperLimit(ThetaStar);
@@ -747,7 +738,7 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	}
 
 	// change linear stiffness of bushing
-	for (int i = 9; i<18; i++){
+	for (int i = 1; i<2; i++){
 
 		((OpenSim::BushingForce*)&force_set.get(i))->set_rotational_stiffness(k1);
 		((OpenSim::BushingForce*)&force_set.get(i))->set_orientation_body_1(o1); // chnage bushing offset
@@ -757,14 +748,6 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	// set mass properties
 	osimModel.updBodySet().get("sk").setMass(head_mass);
 	osimModel.updBodySet().get("t2").setMass(vert_mass);
-	osimModel.updBodySet().get("t1").setMass(vert_mass);
-	osimModel.updBodySet().get("c7").setMass(vert_mass);
-	osimModel.updBodySet().get("c6").setMass(vert_mass);
-	osimModel.updBodySet().get("c5").setMass(vert_mass);
-	osimModel.updBodySet().get("c4").setMass(vert_mass);
-	osimModel.updBodySet().get("c3").setMass(vert_mass);
-	osimModel.updBodySet().get("c2").setMass(vert_mass);
-	osimModel.updBodySet().get("c1").setMass(vert_mass);
 
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
