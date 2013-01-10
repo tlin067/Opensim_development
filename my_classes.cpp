@@ -1,5 +1,5 @@
 #include "my_classes.h"
-
+#include "CoupledBushingForce.h"
 extern double bestSoFar;
 extern int stepCount;
 
@@ -700,7 +700,8 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	// in validate model so model can be changed
 	osimModel.invalidateSystem();
 
-	
+	//%%%%%%%%%%%%%%%%%%%%%%%%%//
+	// PARAMETERS TO USE
 	double ThetaStar = PARAMS[0];
 	Vec3 k1(PARAMS[1]);
 	double k2 = PARAMS[2]*SimTK::Pi/180;
@@ -717,33 +718,67 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	double head_mass = 0.35;//PARAMS[4];
 	
 	o1 = Vec3(0,0,PARAMS[3]); // bushing offset
+	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 
-	OpenSim::BushingForce* t2t1 = new OpenSim::BushingForce("t2",p1bushing,o1,"t1",p2bushing,o2,Tk1,k1,Tdamping,Rdamping);
+	//%%%%%%%%%%%%%%%%%%%%%%%%%//
+	// add stiffness matrix bushing force.....??
+	osimModel.updForceSet().remove(0);
+	osimModel.updForceSet().remove(0);
+	BodySet& bodyset = osimModel.updBodySet();
+	OpenSim::Body& lower = bodyset.get("t2");
+	OpenSim::Body& upper = bodyset.get("sk");
+	SimTK::Mat66 K(1), D(1);
+	K= 40;
+	D = 10;
+	//CB = coupled bushing position i and orientation i
+	Vec3 CBp1(0),CBo1(0),CBp2(0),CBo2(0);
 
+	CoupledBushingForce* F = new CoupledBushingForce(lower.getName(),CBp1,CBo1,upper.getName(),CBp2,CBo2,K,D);
+	F->setName("CoupledBushing1");
+	K.row(0) = 60;
+	K.row(1) = 80;
+	K(5,0) = 99;
+	D(5,0) = 99;
+	cout<<"\n\nK: "<<K;
+	F->setStiffness(K);
+	F->setDamping(D);
+	osimModel.addForce(F);
 
+	
+	////to edit exisitng coupledBushing...
+	//ForceSet& force_set = osimModel.updForceSet();
 
-	// obtain pointer to model forces
-	OpenSim::ForceSet& force_set = osimModel.updForceSet();
+	//cout<<"force name:"<<force_set.get("CoupledBushing1").getName();
+	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setStiffness(K);
+	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setDamping(D);
 
-	// change limit force properties
-	for (int i = 0; i<1; i++){
-		
-		//((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setDamping(0);
-		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setUpperLimit(ThetaStar);
-		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setLowerLimit(-ThetaStar);
-		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setUpperStiffness(k2);
-		((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setLowerStiffness(k2);
-		//((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setTransition(transition);
+	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 
-	}
+	//%%%%%%%%%%%%%%%%%%%%%%%%%//
+	// Change existing model forces
 
-	// change linear stiffness of bushing
-	for (int i = 1; i<2; i++){
+	//// obtain pointer to model forces
+	//OpenSim::ForceSet& force_set = osimModel.updForceSet();
 
-		((OpenSim::BushingForce*)&force_set.get(i))->set_rotational_stiffness(k1);
-		((OpenSim::BushingForce*)&force_set.get(i))->set_orientation_body_1(o1); // chnage bushing offset
-	}
+	//// change limit force properties
+	//for (int i = 0; i<1; i++){
+	//	
+	//	//((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setDamping(0);
+	//	((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setUpperLimit(ThetaStar);
+	//	((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setLowerLimit(-ThetaStar);
+	//	((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setUpperStiffness(k2);
+	//	((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setLowerStiffness(k2);
+	//	//((OpenSim::CoordinateLimitForce*)&force_set.get(i))->setTransition(transition);
 
+	//}
+
+	//// change linear stiffness of bushing
+	//for (int i = 1; i<2; i++){
+
+	//	((OpenSim::BushingForce*)&force_set.get(i))->set_rotational_stiffness(k1);
+	//	((OpenSim::BushingForce*)&force_set.get(i))->set_orientation_body_1(o1); // chnage bushing offset
+	//}
+	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 
 	// set mass properties
 	osimModel.updBodySet().get("sk").setMass(head_mass);

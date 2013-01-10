@@ -34,7 +34,7 @@
 //==============================================================================
 #include <OpenSim/OpenSim.h>
 #include "SimTKsimbody.h"
-
+#include "CoupledBushingForce.h"
 #include "my_classes.h"
 #include "MyObjectiveFunc.h"
 
@@ -83,7 +83,7 @@ int main()
 		
 		double ti,tf;
 		ti = 2;
-		tf = 15;		
+		tf = 4;		
 
 		//// EXTENSION
 		//string expt_file = "l2extv2a";
@@ -177,7 +177,7 @@ int main()
 
 		OpenSim::CoordinateSet& CS = osimModel.updCoordinateSet();
 		OpenSim::Function* function1 = new OpenSim::Constant(0);
-
+		
 		// Create pointer to BodySet inside osimModel
 		BodySet& bodyset = osimModel.updBodySet();
 
@@ -405,46 +405,46 @@ int main()
 		// Try optimisation
 		clock_t t1,t2,t3,t4;
 		t1 = clock();
-		try{
-		
-			// intialise optimizer
-			Optimizer opt(sys, SimTK::InteriorPoint);
-			opt.setDiagnosticsLevel(5);
-			
-			// Optimisation settings					
-			opt.setConvergenceTolerance(1e-5);
-			opt.setMaxIterations(1000);
-			opt.useNumericalGradient(true);
-			opt.setLimitedMemoryHistory(500);
-			
-			// return optimum solution
-			f = opt.optimize(guess);
-			
-			cout<<"\nf = "<<f;
-			cout<<"\nguess = "<<guess;
-		}
-		catch(const std::exception& e) {
-		std::cout << "OptimizationExample.cpp Caught exception :"  << std::endl;
-		std::cout << e.what() << std::endl;
-		}
+		//try{
+		//
+		//	// intialise optimizer
+		//	Optimizer opt(sys, SimTK::InteriorPoint);
+		//	opt.setDiagnosticsLevel(5);
+		//	
+		//	// Optimisation settings					
+		//	opt.setConvergenceTolerance(1e-5);
+		//	opt.setMaxIterations(1000);
+		//	opt.useNumericalGradient(true);
+		//	opt.setLimitedMemoryHistory(500);
+		//	
+		//	// return optimum solution
+		//	f = opt.optimize(guess);
+		//	
+		//	cout<<"\nf = "<<f;
+		//	cout<<"\nguess = "<<guess;
+		//}
+		//catch(const std::exception& e) {
+		//std::cout << "OptimizationExample.cpp Caught exception :"  << std::endl;
+		//std::cout << e.what() << std::endl;
+		//}
 		t2 = clock();
 		// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //	
 
 		cout<<"\n\nOptimiszation time: "<<((float)t2-(float)t1)/ CLOCKS_PER_SEC << " seconds";
 		
-		//// Run simulation and save point kinematic reporter in data_sim storage object. Print simulation results to file.
-		//Array<Array<double>> pk_data;
+		// Run simulation and save point kinematic reporter in data_sim storage object. Print simulation results to file.
+		Array<Array<double>> pk_data;
 
-		//Vector PARAMS(numParams);
-		//for (int i = 0; i<numParams; i++){
-		//	PARAMS[i] = guess[i];
-		//}
+		Vector PARAMS(numParams);
+		for (int i = 0; i<numParams; i++){
+			PARAMS[i] = guess[i];
+		}
 
-		//bool toWrite = 1;
-		////pk_data = simtools->RunSimulation_LIMITSTOP(osimModel,PARAMS,ti,tf,ICs,toWrite,output_fd,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h);
-		//double rms = simtools->RunSimulation_wRMS(data_trc,osimModel,PARAMS,ti,tf,ICs,false,output_fd,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h);
-		//cout<<"\nRMS: "<<rms<<endl;
-		//
+		bool toWrite = 1;
+		//pk_data = simtools->RunSimulation_LIMITSTOP(osimModel,PARAMS,ti,tf,ICs,toWrite,output_fd,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h);
+		double rms = simtools->RunSimulation_wRMS(data_trc,osimModel,PARAMS,ti,tf,ICs,false,output_fd,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h);
+		cout<<"\nRMS: "<<rms<<endl;
+		
 		//////cout<<"\n\npk_data: "<<pk_data;
 		//t3 = clock();
 		//cout<<"\n\nSimulation time: "<<((float)t3-(float)t2)/ CLOCKS_PER_SEC << " seconds";

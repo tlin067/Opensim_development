@@ -772,7 +772,7 @@
 					<!--Stiffness parameters resisting relative rotation.-->
 					<rotational_stiffness>0.993092499474462 0.993092499474462 0.993092499474462</rotational_stiffness>
 					<!--Stiffness parameters resisting relative translation.-->
-					<translational_stiffness>40 10 50</translational_stiffness>
+					<translational_stiffness>40 50 50</translational_stiffness>
 					<!--Damping parameters resisting relative angular velocity.-->
 					<rotational_damping>10 10 10</rotational_damping>
 					<!--Damping parameters resisting relative translational velocity.-->
