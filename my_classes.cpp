@@ -744,7 +744,9 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	F->setDamping(D);
 	osimModel.addForce(F);
 
-	
+	OpenSim::Function* f1 = new OpenSim::LinearFunction(1.0,8);
+	F->setF1(*f1);
+
 	////to edit exisitng coupledBushing...
 	//ForceSet& force_set = osimModel.updForceSet();
 

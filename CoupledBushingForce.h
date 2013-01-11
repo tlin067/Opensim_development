@@ -30,6 +30,7 @@
 #include <OpenSim/Common/PropertyStr.h>
 #include <OpenSim/Common/PropertyDblVec.h>
 #include <OpenSim/Simulation/Model/Force.h>
+#include <OpenSim/Common/osimCommon.h>
 
 namespace OpenSim {
 
@@ -96,6 +97,8 @@ protected:
        PropertyDblVec6 _stiffnessMatrixRow6Prop;
 	   SimTK::Mat66 _stiffnessMatrix;
 
+
+
        /** Damping of the bushing related to XYZ angular and
            translational speeds that express frame2 in frame1.  */
        PropertyDblVec6 _dampingMatrixRow1Prop;
@@ -105,6 +108,10 @@ protected:
        PropertyDblVec6 _dampingMatrixRow5Prop;
        PropertyDblVec6 _dampingMatrixRow6Prop;
        SimTK::Mat66 _dampingMatrix;
+
+	OpenSim_DECLARE_PROPERTY(m_xx_function, Function,
+        "Function defining the contribution of theta_x deflection to the moment about body_2's x axis.");
+
 
 private:
        // underlying SimTK system elements
@@ -119,6 +126,10 @@ private:
 // METHODS
 //=============================================================================
 public:
+
+
+	
+
        // CONSTRUCTION
        CoupledBushingForce();
        CoupledBushingForce( std::string body1Name, SimTK::Vec3 point1, SimTK::Vec3 orientation1,
@@ -137,6 +148,7 @@ public:
        void setBody2BushingLocation(SimTK::Vec3 location, SimTK::Vec3 orientation=SimTK::Vec3(0));
 	   void setStiffness(SimTK::Mat66 K);
 	   void setDamping(SimTK::Mat66 D);
+	   void setF1(const OpenSim::Function& f1);
 
        //--------------------------------------------------------------------------
        // COMPUTATION
@@ -193,7 +205,6 @@ private:
 };     // END of class CoupledBushingForce
 //=============================================================================
 //=============================================================================
-
 } // end of namespace OpenSim
 
 #endif // __CoupledBushingForce_h__

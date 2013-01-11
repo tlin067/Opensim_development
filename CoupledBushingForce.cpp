@@ -85,6 +85,7 @@ CoupledBushingForce::CoupledBushingForce( std::string body1Name, SimTK::Vec3 poi
        _stiffnessMatrix = stiffnessMat;
        _dampingMatrix = dampingMat;
        updatePropertiesFromMatrices();
+
 }
 
 
@@ -214,6 +215,11 @@ void CoupledBushingForce::setupProperties()
 
        _dampingMatrixRow6Prop.setName("damping_row6");
        _propertySet.append(&_dampingMatrixRow6Prop );
+
+	  //set all deflection functions to zero
+	Constant zeroFunc = Constant(0.0);
+    constructProperty_m_xx_function( zeroFunc );
+
 }
 
 //_____________________________________________________________________________
@@ -331,6 +337,12 @@ void CoupledBushingForce::setDamping(Mat66 D)
 
 }
 
+void CoupledBushingForce::setF1(const OpenSim::Function& f1)
+{
+
+    set_m_xx_function( f1 );
+}
+
 //=============================================================================
 // COMPUTATION
 //=============================================================================
@@ -396,6 +408,52 @@ void CoupledBushingForce::computeForce(const SimTK::State& s,
 
     // Evaluate the force in the bushing frame affixed to body1 (F) 
     Vec6 fk = _stiffnessMatrix*dq;
+
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%//
+	// Add cross terms to dq so can recalulate force
+    Vec<21> dq_cross(0); // for ALL cross terms vector needs to be length 2^6 - 1 = 
+
+	// set start of extended vector to dq
+	dq_cross.updSubVec<6>(0) = dq;
+
+	//dq cross terms... dirty. Only single multiplicative terms included so far...
+	dq_cross[6] = dq[0]*dq[1];
+	dq_cross[7] = dq[0]*dq[2];
+	dq_cross[8] = dq[0]*dq[3];
+	dq_cross[9] = dq[0]*dq[4];
+	dq_cross[10] = dq[0]*dq[5];
+	
+	dq_cross[11] = dq[1]*dq[2];
+	dq_cross[12] = dq[1]*dq[3];
+	dq_cross[13] = dq[1]*dq[4];
+	dq_cross[14] = dq[1]*dq[5];
+	
+	dq_cross[15] = dq[2]*dq[3];
+	dq_cross[16] = dq[2]*dq[4];
+	dq_cross[17] = dq[2]*dq[5];
+
+
+	dq_cross[18] = dq[3]*dq[4];
+	dq_cross[19] = dq[3]*dq[5];
+
+	dq_cross[20] = dq[4]*dq[5];
+
+	//std::cout<<"\n\ndq_cross: "<<dq_cross;
+
+	//Extend stiffness matrix
+	Mat66 Kedit = _stiffnessMatrix;
+	Mat<6,21> Knew(0);
+	Knew.updSubMat<6,6>(0,0) = Kedit;
+	// all cross term multipliers are 0 at moment... -> result will be the same
+
+
+	Vec6 fedit;
+	fedit = Knew*dq_cross; // instead of _Stiffness*dq
+	cout<<"\n\nFedit: "<<fedit;
+	cout<<"\n\nFk: "<<fk;
+
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%//
+
 
     // Now evaluate velocities.
     const SpatialVec& V_GB1 = _b1->getBodyVelocity(s);
@@ -546,6 +604,7 @@ void CoupledBushingForce::constructMatricesFromProperties()
                               ~_dampingMatrixRow4Prop.getValueDblVec(),
                               ~_dampingMatrixRow5Prop.getValueDblVec(),
                               ~_dampingMatrixRow6Prop.getValueDblVec());
+
 }
 
 void CoupledBushingForce::updatePropertiesFromMatrices()
@@ -563,4 +622,8 @@ void CoupledBushingForce::updatePropertiesFromMatrices()
        _dampingMatrixRow4Prop.setValue(_dampingMatrix(3));
        _dampingMatrixRow5Prop.setValue(_dampingMatrix(4));
        _dampingMatrixRow6Prop.setValue(_dampingMatrix(5));
+
+	  //set all deflection functions to zero
+    OpenSim::Constant zeroFunc = Constant(0.0);
+    set_m_xx_function( zeroFunc );
 }
