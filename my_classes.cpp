@@ -1,8 +1,8 @@
 #include "my_classes.h"
-#include "CoupledBushingForce.h"
+#include "CoupledBushingForceEDIT.h"
 extern double bestSoFar;
 extern int stepCount;
-
+#include "Exponential.h"
 
 /* ################################################## */
 // SIMULATION TOOLS OBJECTS
@@ -699,65 +699,70 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 
 	// in validate model so model can be changed
 	osimModel.invalidateSystem();
-
+	
 	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 	// PARAMETERS TO USE
-	double ThetaStar = PARAMS[0];
-	Vec3 k1(PARAMS[1]);
-	double k2 = PARAMS[2]*SimTK::Pi/180;
-	Vec3 Rdamping(10);//PARAMS[3]);
-	Vec3 Tk1(0); // translational dof stiffness
-	Vec3 Tdamping(0);//PARAMS[3]); // translational dof damping
+	//double ThetaStar = PARAMS[0];
+	//Vec3 k1(PARAMS[1]);
+	//double k2 = PARAMS[2]*SimTK::Pi/180;
+	//Vec3 Rdamping(10);//PARAMS[3]);
+	//Vec3 Tk1(0); // translational dof stiffness
+	//Vec3 Tdamping(0);//PARAMS[3]); // translational dof damping
 	
 	//// Define position in body 1 (p1), position in body 2 (p2), orientation in body 1 (o1), orientation in  body 2 (o2)
 	//// These are position and orientation os joints wrt bodies. Can set to be constant throughout...
-	Vec3 p1bushing(0),p2bushing(0),o1(0),o2(0);
-	double transition = 2.0;
+	//Vec3 p1bushing(0),p2bushing(0),o1(0),o2(0);
+	//double transition = 2.0;
 
 	double vert_mass = 0.018;
 	double head_mass = 0.35;//PARAMS[4];
 	
-	o1 = Vec3(0,0,PARAMS[3]); // bushing offset
+	//o1 = Vec3(0,0,PARAMS[3]); // bushing offset
 	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 
 	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 	// add stiffness matrix bushing force.....??
-	osimModel.updForceSet().remove(0);
-	osimModel.updForceSet().remove(0);
-	BodySet& bodyset = osimModel.updBodySet();
-	OpenSim::Body& lower = bodyset.get("t2");
-	OpenSim::Body& upper = bodyset.get("sk");
-	SimTK::Mat66 K(1), D(1);
-	K= 40;
-	D = 10;
-	//CB = coupled bushing position i and orientation i
-	Vec3 CBp1(0),CBo1(0),CBp2(0),CBo2(0);
+	//osimModel.updForceSet().remove(0);
+	//osimModel.updForceSet().remove(0);
+	//BodySet& bodyset = osimModel.updBodySet();
+	//OpenSim::Body& lower = bodyset.get("t2");
+	//OpenSim::Body& upper = bodyset.get("sk");
+	//SimTK::Mat66 K(1), D(1);
+	//K= 40;
+	//D = 10;
+	////CB = coupled bushing position i and orientation i
+	//Vec3 CBp1(0),CBo1(0),CBp2(0),CBo2(0);
 
-	CoupledBushingForce* F = new CoupledBushingForce(lower.getName(),CBp1,CBo1,upper.getName(),CBp2,CBo2,K,D);
-	F->setName("CoupledBushing1");
-	K.row(0) = 60;
-	K.row(1) = 80;
-	K(5,0) = 99;
-	D(5,0) = 99;
-	cout<<"\n\nK: "<<K;
-	F->setStiffness(K);
-	F->setDamping(D);
-	osimModel.addForce(F);
-
-	OpenSim::Function* f1 = new OpenSim::LinearFunction(1.0,8);
-	F->setF1(*f1);
+	//CoupledBushingForce* F = new CoupledBushingForce(lower.getName(),CBp1,CBo1,upper.getName(),CBp2,CBo2,K,D);
+	//F->setName("CoupledBushing1");
+	//K.row(0) = 60;
+	//K.row(1) = 80;
+	//K(5,0) = 99;
+	//D(5,0) = 99;
+	//cout<<"\n\nK: "<<K;
+	//F->setStiffness(K);
+	//F->setDamping(D);
+	//osimModel.addForce(F);
+	
+	////
+	//OpenSim::Function* f1 = new OpenSim::LinearFunction(50,0.0);
+	//OpenSim::Function* t1 = new OpenSim::LinearFunction(50,0.0);
 
 	////to edit exisitng coupledBushing...
-	//ForceSet& force_set = osimModel.updForceSet();
-
-	//cout<<"force name:"<<force_set.get("CoupledBushing1").getName();
-	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setStiffness(K);
-	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setDamping(D);
-
+	ForceSet& force_set = osimModel.updForceSet();
+	//cout<<"\n\nforce name:"<<force_set;
+	
+	((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF33((OpenSim::Function&)OpenSim::Exponential(PARAMS[0],PARAMS[1],PARAMS[2]));
+	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setF34((OpenSim::Function&)OpenSim::Constant(0));//:Constant(0.0));
+	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setF35((OpenSim::Function&)OpenSim::Constant(0.0));
+	((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF44((OpenSim::Function&)OpenSim::Exponential(PARAMS[3],PARAMS[4],PARAMS[5]));
+	((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF55((OpenSim::Function&)OpenSim::Exponential(PARAMS[6],PARAMS[7],PARAMS[8]));
 	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 
+	
+
 	//%%%%%%%%%%%%%%%%%%%%%%%%%//
-	// Change existing model forces
+	// Change existing model forces (bushing and limit force...)
 
 	//// obtain pointer to model forces
 	//OpenSim::ForceSet& force_set = osimModel.updForceSet();
@@ -935,6 +940,7 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	//cout<<"\n\na = "<<a[17];
 	//cout<<"\n\na = "<<a[18];
 
+	
 
 	// Read trc storage object and insert data into 2D array for comparison with point kinematic data
 	Array<Array<double>> trc_data(0,18);

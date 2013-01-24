@@ -34,7 +34,7 @@
 //==============================================================================
 #include <OpenSim/OpenSim.h>
 #include "SimTKsimbody.h"
-#include "CoupledBushingForce.h"
+#include "CoupledBushingForceEDIT.h"
 #include "my_classes.h"
 #include "MyObjectiveFunc.h"
 
@@ -73,7 +73,7 @@ int main()
 		
 		//FLEXION
 		string expt_file = "l2flexv2";
-		osim_filename = osim_filename.append(osim_fd).append("OSIM_constrainedwFORCES.osim"); // for flex	
+		osim_filename = osim_filename.append(osim_fd).append("OSIM_contrained.osim"); // for flex	
 		//Open existing XML model
 		Model osimModel(osim_filename); 
 		osimModel.printBasicInfo(cout);		
@@ -83,7 +83,7 @@ int main()
 		
 		double ti,tf;
 		ti = 2;
-		tf = 4;		
+		tf = 7;		
 
 		//// EXTENSION
 		//string expt_file = "l2extv2a";
@@ -139,8 +139,6 @@ int main()
 		force_storage->getDataColumn("t1_y",ty);
 		force_storage->getDataColumn("t1_z",tz);
 		//cout<<"\n\n"<<fx;
-
-		
 
 		vector<double> fx_v,fy_v,fz_v,tx_v,ty_v,tz_v;
 		vector<double> time_v;
@@ -208,6 +206,14 @@ int main()
 		osimModel.addForce(force1); 
 
 
+		OpenSim::Body& lower = osimModel.updBodySet().get("t2");
+		OpenSim::Body& upper = osimModel.updBodySet().get("sk");
+		SimTK::Mat66 K(1), D(10);
+		//CB = coupled bushing position i and orientation i
+		Vec3 CBp1(0),CBo1(0),CBp2(0),CBo2(0);
+		CoupledBushingForceEDIT* F = new CoupledBushingForceEDIT(lower.getName(),CBp1,CBo1,upper.getName(),CBp2,CBo2,K,D);
+		F->setName("CoupledBushing1");
+		osimModel.addForce(F);
 
 		//////////////////////////////////////////////////////////////////////////////////////////////
 		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
@@ -327,7 +333,7 @@ int main()
 
 		//// Define bushing properties
 		//// Define translational stiffness (t_stiff - x,y,z), rotational stiffness (r_stiff - x,y,z) and corresponding damping
-		Vec3 t_stiff(0),r_stiff(0.01),t_damp(0),r_damp(10);
+		//Vec3 t_stiff(0),r_stiff(0.01),t_damp(0),r_damp(10);
 		
 		// Open trc file and store in class MarkerData
 		MarkerData md = OpenSim::MarkerData(marker_filename);
@@ -341,7 +347,7 @@ int main()
 		// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
 		
 		// Initialise and run optimization
-		int numParams = 4;
+		int numParams = 9;
 		// Parameters:
 		// - Theta_STAR
 		// - k1		
@@ -355,37 +361,12 @@ int main()
 		Vector lower_bounds(numParams);
 		Vector upper_bounds(numParams);
 
-		// theta star
-		lower_bounds[0] = 6;//0.0;//*Pi/180;
-		upper_bounds[0] = 15;//1.0;//*Pi/180;
+		// set bounds
+		for (int i=0;i<numParams;i++){
+			lower_bounds[i] = -100;//0.0;//*Pi/180;
+			upper_bounds[i] = 100;//1.0;//*Pi/180;
+		}
 
-		// k1
-		lower_bounds[1] = 1e-6;//0.0;//*Pi/180;
-		upper_bounds[1] = 15;//1.0;//*Pi/180;
-
-		// k2
-		lower_bounds[2] = 0.1;
-		upper_bounds[2] = 100;
-
-		//// damping
-		//lower_bounds[3] = 0.5;
-		//upper_bounds[3] = 30;
-
-		//bushing offset
-		lower_bounds[3] = -2.0;
-		upper_bounds[3] = 2.0;
-
-		//// theta star sk
-		//lower_bounds[4] = 6;//0.0;//*Pi/180;
-		//upper_bounds[4] = 30;//1.0;//*Pi/180;
-
-		//// k1 sk
-		//lower_bounds[5] = 1e-6;//0.0;//*Pi/180;
-		//upper_bounds[5] = 15;//1.0;//*Pi/180;
-
-		//// k2 sk
-		//lower_bounds[6] = 0.1;
-		//upper_bounds[6] = 100;
 
 		// set parameter limits
 		sys.setParameterLimits(lower_bounds,upper_bounds);
@@ -393,40 +374,42 @@ int main()
 		// initialise vector of initial parameter guesses
 		Vector guess(numParams);
 	
-		guess[0] = 6.82;//6.00553; // theta star (degrees)
-		guess[1] = 1.22; // k1 (N*m/degree)
-		guess[2] = 7.29; // k2 (N*m/degree)
-		guess[3] = 0.22;//0.409055; // bushing offset
-		//guess[4] = 0.0; // head mass
-		//		guess[4] = 45; // theta star sk (degrees)
-		//guess[5] = guess[1]; // k1 sk (N*m/degree)
-		//guess[6] = guess[2]; // k2 sk (N*m/degree)
+		guess[0] = 1;//6.00553; // theta star (degrees)
+		guess[1] = 30; // k1 (N*m/degree)
+		guess[2] = 0; // k2 (N*m/degree)
+		guess[3] = 1.0;//0.409055; // bushing offset
+		guess[4] = 30.0; // head mass
+		guess[5] = 0.0; // k1 sk (N*m/degree)
+		guess[6] = 1.0;//0.409055; // bushing offset
+		guess[7] = 30.0; // head mass
+		guess[8] = 0.0; // k1 sk (N*m/degree)
+
 		
 		// Try optimisation
 		clock_t t1,t2,t3,t4;
 		t1 = clock();
-		//try{
-		//
-		//	// intialise optimizer
-		//	Optimizer opt(sys, SimTK::InteriorPoint);
-		//	opt.setDiagnosticsLevel(5);
-		//	
-		//	// Optimisation settings					
-		//	opt.setConvergenceTolerance(1e-5);
-		//	opt.setMaxIterations(1000);
-		//	opt.useNumericalGradient(true);
-		//	opt.setLimitedMemoryHistory(500);
-		//	
-		//	// return optimum solution
-		//	f = opt.optimize(guess);
-		//	
-		//	cout<<"\nf = "<<f;
-		//	cout<<"\nguess = "<<guess;
-		//}
-		//catch(const std::exception& e) {
-		//std::cout << "OptimizationExample.cpp Caught exception :"  << std::endl;
-		//std::cout << e.what() << std::endl;
-		//}
+		try{
+		
+			// intialise optimizer
+			Optimizer opt(sys, SimTK::InteriorPoint);
+			opt.setDiagnosticsLevel(5);
+			
+			// Optimisation settings					
+			opt.setConvergenceTolerance(1e-5);
+			opt.setMaxIterations(1000);
+			opt.useNumericalGradient(true);
+			opt.setLimitedMemoryHistory(500);
+			
+			// return optimum solution
+			f = opt.optimize(guess);
+			
+			cout<<"\nf = "<<f;
+			cout<<"\nguess = "<<guess;
+		}
+		catch(const std::exception& e) {
+		std::cout << "OptimizationExample.cpp Caught exception :"  << std::endl;
+		std::cout << e.what() << std::endl;
+		}
 		t2 = clock();
 		// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //	
 
