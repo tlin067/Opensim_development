@@ -1,7 +1,7 @@
-#ifndef __Exponential_h__
-#define __Exponential_h__
+#ifndef __ArbNonLinear_h__
+#define __ArbNonLinear_h__
 /* -------------------------------------------------------------------------- *
- *                              OpenSim:  Exponential.h                              *
+ *                              OpenSim:  ArbNonLinear.h                              *
  * -------------------------------------------------------------------------- *
  * The OpenSim API is a toolkit for musculoskeletal modeling and simulation.  *
  * See http://opensim.stanford.edu and the NOTICE file for more information.  *
@@ -35,18 +35,18 @@ namespace OpenSim {
 //=============================================================================
 //=============================================================================
 /**
- * A class for representing a Exponential function.
+ * A class for representing a ArbNonLinear function.
  *
  * This class inherits from Function and so can be used as input to
- * any class requiring a Fuction as input. Implements f(x) = Aexp^Bx + C
+ * any class requiring a Fuction as input. Implements f(x) = Ax^N + B
  *
  * @author Ajay Seth
  * @version 1.0  
  */
 
-// Was in front of Exponential "OSIMCOMMON_API".... but only works without it
-class Exponential : public Function {
-OpenSim_DECLARE_CONCRETE_OBJECT(Exponential, Function);
+// Was in front of ArbNonLinear "OSIMCOMMON_API".... but only works without it
+class ArbNonLinear : public Function {
+OpenSim_DECLARE_CONCRETE_OBJECT(ArbNonLinear, Function);
 
 //=============================================================================
 // MEMBER VARIABLES
@@ -59,8 +59,8 @@ protected:
 	PropertyDbl _BProp;
 	double &_B;
 
-	PropertyDbl _CProp;
-	double &_C;
+	PropertyDbl _NProp;
+	double &_N;
 
 //=============================================================================
 // METHODS
@@ -69,45 +69,45 @@ public:
 	//--------------------------------------------------------------------------
 	// CONSTRUCTION
 	//--------------------------------------------------------------------------
-	Exponential() : _A(_AProp.getValueDbl()), _B(_BProp.getValueDbl()), _C(_CProp.getValueDbl()) { setupProperties();}
+	ArbNonLinear() : _A(_AProp.getValueDbl()), _B(_BProp.getValueDbl()), _N(_NProp.getValueDbl()) { setupProperties();}
 	// Convenience Constructor
-	Exponential(double A, double B, double C) : _A(_AProp.getValueDbl()), _B(_BProp.getValueDbl()), _C(_CProp.getValueDbl()) {
+	ArbNonLinear(double A, double B, double N) : _A(_AProp.getValueDbl()), _B(_BProp.getValueDbl()), _N(_NProp.getValueDbl()) {
 		setupProperties();
-		_A = A;  _B = B;  _C = C; 
+		_A = A;  _B = B;  _N = N; 
 	}
 	// Copy Constructor
-	Exponential(const Exponential &aFunc): _A(_AProp.getValueDbl()), _B(_BProp.getValueDbl()), _C(_CProp.getValueDbl()) {
+	ArbNonLinear(const ArbNonLinear &aFunc): _A(_AProp.getValueDbl()), _B(_BProp.getValueDbl()), _N(_NProp.getValueDbl()) {
 			setupProperties();
-			_A = aFunc._A;  _B = aFunc._B;  _C = aFunc._C; 
+			_A = aFunc._A;  _B = aFunc._B;  _N = aFunc._N; 
 	};
-	virtual ~Exponential() {};
+	virtual ~ArbNonLinear() {};
 
 private:
 	void setupProperties() {
 		_AProp.setName("A");
-		_AProp.setComment("A of the Exponential function");
+		_AProp.setComment("Coeff of the ArbNonLinear function");
 		_AProp.setValue(1);
 		_propertySet.append(&_AProp);
 
 		_BProp.setName("B");
-		_BProp.setComment("B of the Exponential function");
-		_BProp.setValue(1);
+		_BProp.setComment("Offset of the ArbNonLinear function");
+		_BProp.setValue(0);
 		_propertySet.append(&_BProp);
 
-		_CProp.setName("C");
-		_CProp.setComment("Offset of the exponential function");
-		_CProp.setValue(0);
-		_propertySet.append(&_CProp);
+		_NProp.setName("N");
+		_NProp.setComment("Power of the ArbNonLinear function");
+		_NProp.setValue(1);
+		_propertySet.append(&_NProp);
 	}
 
 	//--------------------------------------------------------------------------
 	// OPERATORS
 	//--------------------------------------------------------------------------
 public:
-	Exponential& operator=(const Exponential &func)
+	ArbNonLinear& operator=(const ArbNonLinear &func)
 	{
 		Function::operator=(func);
-		_A = func._A;  _B = func._B;  _C = func._C; 
+		_A = func._A;  _B = func._B;  _N = func._N; 
 		return(*this);
 	}
 	//--------------------------------------------------------------------------
@@ -124,10 +124,10 @@ public:
 		double returnValue;
 
 		if (x[0]<0){
-			returnValue = -(_A*exp(_B*-x[0]) -_A + _C);
+			returnValue = -(pow(-x[0],_N)*_A) + _B;
 		}
 		else if (x[0]>=0){
-			returnValue = _A*exp(_B*x[0]) -_A + _C;
+			returnValue = pow(x[0],_N)*_A + _B;
 		}
 		
 		return returnValue;
@@ -137,7 +137,7 @@ public:
 	{
 		int n = derivComponents.size();
 
-		return _A*_B*exp(_B*x[0]);
+		return _N*_A*pow(fabs(x[0]),(_N-1));
 	}
 
 	SimTK::Function* createSimTKFunction() const {
@@ -148,10 +148,10 @@ public:
 	int getMaxDerivativeOrder() const {return 1;}
 
 //=============================================================================
-};	// END class Exponential;
+};	// END class ArbNonLinear;
 //=============================================================================
 //=============================================================================
 
 } // end of namespace OpenSim
 
-#endif  // __Exponential_h__
+#endif  // __ArbNonLinear_h__

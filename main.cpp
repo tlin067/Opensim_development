@@ -37,10 +37,20 @@
 #include "CoupledBushingForceEDIT.h"
 #include "my_classes.h"
 #include "MyObjectiveFunc.h"
+#include "Model_setup.h"
+#include "Force_Plugin\FunctionBasedBushingForce.h"
 
-#include <Cfsqp\cfsqpusr.h>
+//#include <Cfsqp\cfsqpusr.h>
 #include <time.h>    // for clock()
 #include <iostream>
+
+#ifdef _WIN32
+	#include <direct.h> 
+	#define GetCurrentDir _getcwd 
+#else 
+	#include <unistd.h> 
+	#define GetCurrentDir getcwd 
+#endif 
 
 double bestSoFar = Infinity;
 int stepCount = 0;
@@ -50,8 +60,6 @@ int stepCount = 0;
 */
 int main()
 {
-
-
 	try {
 
 		//////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,14 +71,50 @@ int main()
 		string marker_filename = "";
 		string ik_setup_filename = "";
 
-		// Set up file directories
 		
+
+		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
+		//// Set up file directories for LINUX
+		//      //Current directory... 
+		//      char cCurrentPath[100]; 
+		//      if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))) 
+		//           { 
+		//           return 0; 
+		//           } 
+		//      string currentPath = cCurrentPath;         
+		//      // Define osim file location 
+		//      string osim_fd = currentPath.append("/Opensim_development/"); 
+		//      currentPath = cCurrentPath; 
+
+		//       
+		//      // Specify force and trc mocap file 
+		//      string fd = currentPath.append("/Lamb2 data files/"); 
+		//      currentPath = cCurrentPath; 
+		//      //FLEXION 
+		//      string expt_file = "l2flexv2"; 
+		//      osim_filename = osim_filename.append(osim_fd).append("OSIM_contrained.osim"); // for flex     
+		//      //Open existing XML model 
+		//      Model osimModel(osim_filename);  
+		//      osimModel.printBasicInfo(cout);         
+		//      osimModel.updCoordinateSet().get("t2ToGND_FE").setDefaultValue(-Pi/2); // to flip up model so initial ik guess is close 
+		//      osimModel.updCoordinateSet().get("t2ToGND_LB").setDefaultValue(-Pi/2); 
+		//      string output_fd = currentPath.append("/OpenSim Output/flex_output.sto"); 
+
+        //force_filename = force_filename.append(fd).append(expt_file).append(".mot"); 
+        //marker_filename = marker_filename.append(fd).append(expt_file).append(".trc"); 
+        //ik_setup_filename = ik_setup_filename.append(osim_fd).append(expt_file).append("_initial_ik.xml"); 
+
+		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
+
+		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
+		// Set up file directories for WINDOWS...
+
 		// Define osim file location
 		string osim_fd = "T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/OpenSim new versions (from Version10)/Opensim_development/";
-		
+
 		// Specify force and trc mocap file
 		string fd = "T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/Lamb2 data files/";
-		
+
 		//FLEXION
 		string expt_file = "l2flexv2";
 		osim_filename = osim_filename.append(osim_fd).append("OSIM_contrained.osim"); // for flex	
@@ -80,10 +124,9 @@ int main()
 		osimModel.updCoordinateSet().get("t2ToGND_FE").setDefaultValue(-Pi/2); // to flip up model so initial ik guess is close
 		osimModel.updCoordinateSet().get("t2ToGND_LB").setDefaultValue(-Pi/2);
 		string output_fd = "T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/OpenSim new versions (from Version10)/OpenSim Output/flex_output.sto";
-		
 		double ti,tf;
 		ti = 2;
-		tf = 7;		
+		tf = 7;	
 
 		//// EXTENSION
 		//string expt_file = "l2extv2a";
@@ -98,194 +141,29 @@ int main()
 		//ti = 5;
 		//tf = 18;
 
-
 		force_filename = force_filename.append(fd).append(expt_file).append(".mot");
 		marker_filename = marker_filename.append(fd).append(expt_file).append(".trc");
 		ik_setup_filename = ik_setup_filename.append(osim_fd).append(expt_file).append("_initial_ik.xml");
 
-		
-		// Create storage object for force file
-		OpenSim::Storage* force_storage = new Storage(force_filename);
-		
-
-		// smooths out all data....
-		force_storage->smoothSpline(3,1); // order = 3, cutoff freq = 1Hz
-		force_storage->resampleLinear(0.1); // resample to 10Hz
-		//force_storage->print("T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/Version4/force_flex_smooth.sto");
-		//////////////////////////////////////////////////////////////////////////////////////////////
-		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-		//////////////////////////////////////////////////////////////////////////////////////////////
-
-		// USE force file to prescribe forces to head_markers body
-
-		/////////////////////////////////////
-		// NOTE: There seemed to be problem invoking "setdatacolumn" and saving result directly to double. Done a work around where save result as array, ...
-		// and then convert to double for input into GCVSpline
-		Array<double> time = Array<double>();
-		Array<double> fx = Array<double>();
-		Array<double> fy = Array<double>();
-		Array<double> fz = Array<double>();
-		Array<double> tx = Array<double>();
-		Array<double> ty = Array<double>();
-		Array<double> tz = Array<double>();
-
-		force_storage->getTimeColumn(time,-1);
-		//cout<<"\n\n"<<time;
-
-		force_storage->getDataColumn("f1_vx",fx);
-		force_storage->getDataColumn("f1_vy",fy);
-		force_storage->getDataColumn("f1_vz",fz);
-		force_storage->getDataColumn("t1_x",tx);
-		force_storage->getDataColumn("t1_y",ty);
-		force_storage->getDataColumn("t1_z",tz);
-		//cout<<"\n\n"<<fx;
-
-		vector<double> fx_v,fy_v,fz_v,tx_v,ty_v,tz_v;
-		vector<double> time_v;
-
-		for(int j = 0; j<force_storage->getSize(); j++)
-		{
-			time_v.push_back(time.get(j));
-			fx_v.push_back(fx.get(j));
-			fy_v.push_back(fy.get(j));
-			fz_v.push_back(fz.get(j));
-			tx_v.push_back(tx.get(j));
-			ty_v.push_back(ty.get(j));
-			tz_v.push_back(tz.get(j));
-		} 
-
-		double* t = &time_v[0];
-		double* f1x = &fx_v[0];
-		double* f1y = &fy_v[0];
-		double* f1z = &fz_v[0];
-		double* t1x = &tx_v[0];
-		double* t1y = &ty_v[0];
-		double* t1z = &tz_v[0];
-		//cout<<"\n\n"<<*(t+10);
-		//cout<<"\n\n"<<*(f1z+10);
-
-		// Create function for all forces and torques
-		OpenSim::Function* spline_fx = new OpenSim::GCVSpline(3,force_storage->getSize(),t,f1x,"fx",0);
-		OpenSim::Function* spline_fy = new OpenSim::GCVSpline(3,force_storage->getSize(),t,f1y,"fy",0);
-		OpenSim::Function* spline_fz = new OpenSim::GCVSpline(3,force_storage->getSize(),t,f1z,"fz",0);
-		OpenSim::Function* spline_tx = new OpenSim::GCVSpline(3,force_storage->getSize(),t,t1x,"tx",0);
-		OpenSim::Function* spline_ty = new OpenSim::GCVSpline(3,force_storage->getSize(),t,t1y,"ty",0);
-		OpenSim::Function* spline_tz = new OpenSim::GCVSpline(3,force_storage->getSize(),t,t1z,"tz",0);
-		/////////////////////////////////////
+		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//	
 
 		OpenSim::CoordinateSet& CS = osimModel.updCoordinateSet();
-		OpenSim::Function* function1 = new OpenSim::Constant(0);
-		
-		// Create pointer to BodySet inside osimModel
 		BodySet& bodyset = osimModel.updBodySet();
 
-		// Add external prescribed force to head_markers body using spline functions created. 
-		OpenSim::Body * head_markers = &bodyset.get("head_markers");
-		PrescribedForce *force1 = new PrescribedForce(head_markers); 
-
-		// Prescribe functions for specifying the point that force is applied to (function 1 = constant value of 0)
-		force1->setPointFunctions(function1,function1,function1);
-
-		// Create linear function
-		// Array<double> function_coeffs(0,2);
-		// function_coeffs[0] = 5;
-		// function_coeffs[1] = 0;
-		// OpenSim::Function* function2 = new OpenSim::LinearFunction(function_coeffs);
-		// Create constant function
-		// OpenSim::Function* function3 = new OpenSim::Constant(8);
-
-		// Prescribe force and torque functions using splines from force measurement file
-		force1->setForceFunctions(spline_fx,spline_fy,spline_fz);
-		force1->setTorqueFunctions(spline_tx,spline_ty,spline_tz);
-
-		// Specify that force and point are NOT in global frame (i.e. expressed in frame of head_markers body)
-		force1->setForceIsInGlobalFrame(0);
-		force1->setPointIsInGlobalFrame(0);
-		force1->setName("External_Load");
-		// add force to osim model
-		osimModel.addForce(force1); 
-
-
-		OpenSim::Body& lower = osimModel.updBodySet().get("t2");
-		OpenSim::Body& upper = osimModel.updBodySet().get("sk");
-		SimTK::Mat66 K(1), D(10);
-		//CB = coupled bushing position i and orientation i
-		Vec3 CBp1(0),CBo1(0),CBp2(0),CBo2(0);
-		CoupledBushingForceEDIT* F = new CoupledBushingForceEDIT(lower.getName(),CBp1,CBo1,upper.getName(),CBp2,CBo2,K,D);
-		F->setName("CoupledBushing1");
-		osimModel.addForce(F);
-
-		//////////////////////////////////////////////////////////////////////////////////////////////
-		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-		//////////////////////////////////////////////////////////////////////////////////////////////
-
-		//////////////////////////////////////////////////////////////////////////////////////////////
-		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-		//////////////////////////////////////////////////////////////////////////////////////////////
-
-		// Set up point kinematic analyses -> to track marker positions for use in objective function
-
-		//cout<<"\n\nINITAL ANALYSIS SET: "<<osimModel.getAnalysisSet()<<"\n\n";
-
-		// Create list of point kinematics reporters which match marker positions from osim model
-		PointKinematics* m1h = new PointKinematics(&osimModel);
-		PointKinematics* m2h = new PointKinematics(&osimModel);
-		PointKinematics* m3h = new PointKinematics(&osimModel);
-		PointKinematics* m4h = new PointKinematics(&osimModel);
-		PointKinematics* m5h = new PointKinematics(&osimModel);
-		PointKinematics* m6h = new PointKinematics(&osimModel);
+		// Create initial set up class
+		Model_setup* modelSetup = new Model_setup();
 		
-		// Set to return coordinates of point (specified wrt head_markers) but expressed in ground ref frame
-		//m1h->setBody(&osimModel.updBodySet().get("head_markers"));
-		//m2h->setBody(&osimModel.updBodySet().get("head_markers"));
-		//m3h->setBody(&osimModel.updBodySet().get("head_markers"));
-		//m4h->setBody(&osimModel.updBodySet().get("head_markers"));
-		//m5h->setBody(&osimModel.updBodySet().get("head_markers"));
-		//m6h->setBody(&osimModel.updBodySet().get("head_markers"));
+		//add external force measurements
+		modelSetup->addExtForce(osimModel, force_filename);
+		//add default coupled bushing so properties can be changed later.
+		modelSetup->addInitialCoupledBushing(osimModel);
+		modelSetup->addPKAnalyses(osimModel);
 
-		// points in head_marker ref frame specified by inspection
-		Vec3 p1(0.071700000,0.00000000,-0.054772000);
-		Vec3 p2(-0.071700000,0.00000000,-0.038524000);
-		Vec3 p3(0.071700000,0.00000000,0.005228);
-		Vec3 p4(-0.0300000,0.00000000,0.026928);
-		Vec3 p5(0.0300000,0.00000000,0.026928);
-		Vec3 p6(-0.071700000,0.00000000,-0.008524000);
+		//osimModel.print("T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/OpenSim new versions (from Version10)/OpenSim Output/XXXmodel output.osim");
 
-		m1h->setBodyPoint("head_markers",p1);
-		m2h->setBodyPoint("head_markers",p2);
-		m3h->setBodyPoint("head_markers",p3);
-		m4h->setBodyPoint("head_markers",p4);
-		m5h->setBodyPoint("head_markers",p5);
-		m6h->setBodyPoint("head_markers",p6);
-		
-		m1h->setRelativeToBody(&osimModel.updBodySet().get("ground"));
-		m2h->setRelativeToBody(&osimModel.updBodySet().get("ground"));
-		m3h->setRelativeToBody(&osimModel.updBodySet().get("ground"));
-		m4h->setRelativeToBody(&osimModel.updBodySet().get("ground"));
-		m5h->setRelativeToBody(&osimModel.updBodySet().get("ground"));
-		m6h->setRelativeToBody(&osimModel.updBodySet().get("ground"));
-		
-		m1h->setName("m1");
-		m2h->setName("m2");
-		m3h->setName("m3");
-		m4h->setName("m4");
-		m5h->setName("m5");
-		m6h->setName("m6");
+		cout<<"\n\n"<<osimModel.updAnalysisSet();
+		cout<<"\n\n";
 
-		osimModel.addAnalysis(m1h);
-		osimModel.addAnalysis(m2h);
-		osimModel.addAnalysis(m3h);
-		osimModel.addAnalysis(m4h);
-		osimModel.addAnalysis(m5h);
-		osimModel.addAnalysis(m6h);
-
-		//cout<<"\n\nINITAL ANALYSIS SET: "<<osimModel.getAnalysisSet()<<"\n\n";
-
-		//cout<<"\n\nMARKER SET: "<<osimModel.getMarkerSet()<<"\n\n";
-
-		//////////////////////////////////////////////////////////////////////////////////////////////
-		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-		//////////////////////////////////////////////////////////////////////////////////////////////
 
 		//////////////////////////////////////////////////////////////////////////////////////////////
 		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
@@ -293,18 +171,18 @@ int main()
 
 
 		// Run initial ik step to find Initial conditions for forward simulation
-		
+
 		SimTools* simtools = new SimTools();
-		
+
 		Array<double> ICs;
-	
+
 		// Returns state values at initial time -> ICs has length of coordinate set (computed by single ik step)
 		ICs = simtools->ik_constrain_torso(osimModel,marker_filename,ik_setup_filename,ti,tf);
 
 		// Display initial conditions for forward simulation
 		cout<<"\n\n Initial Conditions = "<<ICs<<"\n\n";
 
-		
+
 		// Sets torso coordinates to be set @ value specified by ik analysis (assuming torso does not move....)
 		for(int i = 0; i<6; i++)
 		{
@@ -317,7 +195,7 @@ int main()
 
 		// Prints out ammended osim file -> Torso coords will be prescribed to some constant value
 		//osimModel.print("T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/Version4/test.osim");
-		
+
 
 		//////////////////////////////////////////////////////////////////////////////////////////////
 		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
@@ -334,7 +212,7 @@ int main()
 		//// Define bushing properties
 		//// Define translational stiffness (t_stiff - x,y,z), rotational stiffness (r_stiff - x,y,z) and corresponding damping
 		//Vec3 t_stiff(0),r_stiff(0.01),t_damp(0),r_damp(10);
-		
+
 		// Open trc file and store in class MarkerData
 		MarkerData md = OpenSim::MarkerData(marker_filename);
 
@@ -345,90 +223,101 @@ int main()
 		data_trc.crop(ti,tf); // -> data_trc is used to calculate rms error between model marker and motion capture markers
 
 		// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //
-		
+
 		// Initialise and run optimization
-		int numParams = 9;
+		int numParams = 22;
 		// Parameters:
 		// - Theta_STAR
 		// - k1		
 		// - k2
 		// - bushing offset
-		
-		MyOptimizerSystem sys(numParams,osimModel,data_trc,ti,tf,ICs,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h,output_fd);
+
+		MyOptimizerSystem sys(numParams,osimModel,data_trc,ti,tf,ICs,output_fd);
+
+//(OpenSim::PointKinematics&)osimModel.getAnalysisSet().get(0),(OpenSim::PointKinematics&)osimModel.getAnalysisSet().get(1),(OpenSim::PointKinematics&)osimModel.getAnalysisSet().get(2),(OpenSim::PointKinematics&)osimModel.getAnalysisSet().get(3),(OpenSim::PointKinematics&)osimModel.getAnalysisSet().get(4),(OpenSim::PointKinematics&)osimModel.getAnalysisSet().get(5),output_fd);
 
 		Real f = NaN;
 
-		Vector lower_bounds(numParams);
-		Vector upper_bounds(numParams);
-
-		// set bounds
-		for (int i=0;i<numParams;i++){
-			lower_bounds[i] = -100;//0.0;//*Pi/180;
-			upper_bounds[i] = 100;//1.0;//*Pi/180;
+		//Vector lower_bounds(numParams);
+		//Vector upper_bounds(numParams);
+		Vector guess(numParams);
+		//// set bounds
+		for (int i=0;i<(numParams-1);i++){
+			guess[i] = 0;//0.0;//*Pi/180;
+			//upper_bounds[i] = 100;//1.0;//*Pi/180;
 		}
 
-
+		guess[21] = 0.8;
 		// set parameter limits
-		sys.setParameterLimits(lower_bounds,upper_bounds);
+		//sys.setParameterLimits(lower_bounds,upper_bounds);
 
 		// initialise vector of initial parameter guesses
-		Vector guess(numParams);
-	
-		guess[0] = 1;//6.00553; // theta star (degrees)
-		guess[1] = 30; // k1 (N*m/degree)
-		guess[2] = 0; // k2 (N*m/degree)
-		guess[3] = 1.0;//0.409055; // bushing offset
-		guess[4] = 30.0; // head mass
-		guess[5] = 0.0; // k1 sk (N*m/degree)
-		guess[6] = 1.0;//0.409055; // bushing offset
-		guess[7] = 30.0; // head mass
-		guess[8] = 0.0; // k1 sk (N*m/degree)
-
 		
-		// Try optimisation
+
+		//guess[0] = 5;
+		//guess[1] = 0; 
+		//guess[2] = 0; 
+		//guess[3] = 0;
+		//guess[4] = 40;
+		//guess[5] = 0; 
+		//guess[6] = 0;
+		//guess[7] = 0; 
+		//guess[8] = 40; 
+
+		//guess[9] = 0.65;
+
+
+		//// Try optimisation
 		clock_t t1,t2,t3,t4;
 		t1 = clock();
-		try{
-		
-			// intialise optimizer
-			Optimizer opt(sys, SimTK::InteriorPoint);
-			opt.setDiagnosticsLevel(5);
-			
-			// Optimisation settings					
-			opt.setConvergenceTolerance(1e-5);
-			opt.setMaxIterations(1000);
-			opt.useNumericalGradient(true);
-			opt.setLimitedMemoryHistory(500);
-			
-			// return optimum solution
-			f = opt.optimize(guess);
-			
-			cout<<"\nf = "<<f;
-			cout<<"\nguess = "<<guess;
-		}
-		catch(const std::exception& e) {
-		std::cout << "OptimizationExample.cpp Caught exception :"  << std::endl;
-		std::cout << e.what() << std::endl;
-		}
+		//try{
+
+		//	// intialise optimizer
+		//	Optimizer opt(sys, SimTK::InteriorPoint);
+		//	opt.setDiagnosticsLevel(5);
+
+		//	// Optimisation settings					
+		//	opt.setConvergenceTolerance(1e-5);
+		//	opt.setMaxIterations(1000);
+		//	opt.useNumericalGradient(true);
+		//	opt.setLimitedMemoryHistory(500);
+
+		//	// return optimum solution
+		//	f = opt.optimize(guess);
+
+		//	cout<<"\nf = "<<f;
+		//	cout<<"\nguess = "<<guess;
+		//}
+		//catch(const std::exception& e) {
+		//	std::cout << "OptimizationExample.cpp Caught exception :"  << std::endl;
+		//	std::cout << e.what() << std::endl;
+		//}
 		t2 = clock();
-		// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //	
+		 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% //	
 
 		cout<<"\n\nOptimiszation time: "<<((float)t2-(float)t1)/ CLOCKS_PER_SEC << " seconds";
-		
+
 		// Run simulation and save point kinematic reporter in data_sim storage object. Print simulation results to file.
-		Array<Array<double>> pk_data;
+		Array<Array<double> > pk_data;
 
 		Vector PARAMS(numParams);
 		for (int i = 0; i<numParams; i++){
 			PARAMS[i] = guess[i];
 		}
 
+		OpenSim::PointKinematics *m1h = (OpenSim::PointKinematics*)&osimModel.updAnalysisSet().get("m1");
+		OpenSim::PointKinematics *m2h = (OpenSim::PointKinematics*)&osimModel.updAnalysisSet().get("m2");
+		OpenSim::PointKinematics *m3h = (OpenSim::PointKinematics*)&osimModel.updAnalysisSet().get("m3");
+		OpenSim::PointKinematics *m4h = (OpenSim::PointKinematics*)&osimModel.updAnalysisSet().get("m4");
+		OpenSim::PointKinematics *m5h = (OpenSim::PointKinematics*)&osimModel.updAnalysisSet().get("m5");
+		OpenSim::PointKinematics *m6h = (OpenSim::PointKinematics*)&osimModel.updAnalysisSet().get("m6");
+
 		bool toWrite = 1;
 		//pk_data = simtools->RunSimulation_LIMITSTOP(osimModel,PARAMS,ti,tf,ICs,toWrite,output_fd,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h);
 		double rms = simtools->RunSimulation_wRMS(data_trc,osimModel,PARAMS,ti,tf,ICs,false,output_fd,*m1h,*m2h,*m3h,*m4h,*m5h,*m6h);
 		cout<<"\nRMS: "<<rms<<endl;
-		
-		//////cout<<"\n\npk_data: "<<pk_data;
+
+		////cout<<"\n\npk_data: "<<pk_data;
 		//t3 = clock();
 		//cout<<"\n\nSimulation time: "<<((float)t3-(float)t2)/ CLOCKS_PER_SEC << " seconds";
 		//double rms = simtools->Calc_rms_VERSION2(data_trc,ti,tf,pk_data);
@@ -465,7 +354,7 @@ int main()
 		//myfile.close();
 		//cout<<"\n\nk = "<<k;
 		//cout<<"\n\nobj = "<<obj;
-		
+
 
 		//ofstream myfile_2param;
 		//myfile_2param.open("T:/Lamb expts 2012/Lamb experiments 2012/23rd - 24th July Expts/Opensim/Version6/Model/fileConstrainedwBushingAndLimit_2param_v2.txt");
@@ -524,7 +413,7 @@ int main()
 	}
 
 	//std::cout << "main() routine time = " << 1.e3*(std::clock()-startTime)/CLOCKS_PER_SEC << "ms\n";
-	
+
 	std::cout << "\n\nOpenSim example completed successfully.\n";
 	std::cin.get();
 	return 0;

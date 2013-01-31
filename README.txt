@@ -1,18 +1,22 @@
 Tom Lintern
 11/1/2013
 
-v1b Have included coupledbushingforce.cpp. This allows user to specify full 6x6 stiffness and damping matrix. There are no coupling terms however. 
+Have added in MAtt deMers plugin to create FunctionBasedBushing forces.
 
-Need to add function based descriptions of these, as currently only linear coef's are allowed. 
+I have created function ArbNonLinear.h which is a function that returns y = Ax^n + B where A, n, B are free parameters.
 
-v1c Have extended the stiffness matrix and q vector in "coupledBushing: class. Am working on creating properties which I can use to define different values within the stiffness matrix. Trying to use Matt deMers funciton bushing code to do so.
+I have set up an optimisation to run where
 
-v1d Have created a functionBasedCoupled bushing force function.
-i.e. ... 
-T1 = 0
-T2 = 0
-T3 = f(theta) + f(x) + f(y)
-Fx = f(theta) + f(x) + f(y)
-Fy = f(theta) + f(x) + f(y)
-Fz = 0
+T[0] = 0 -> functions are zero by default.
+T[1] = 0
+T[2] = f(A,n,B,theta) + f(A,n,B,x) + f(A,n,B,y)
+f[1] = f(A,n,B,theta) + f(A,n,B,x) + f(A,n,B,y)
+f[2] = f(A,n,B,theta) + f(A,n,B,x) + f(A,n,B,y)    nb all A B and n's are different.
+f[3] = 0
+
+Code has also been deployed to hpc.
+
+Plan to try optimisation without cross terms before including them to see if result improves.
+
+
 

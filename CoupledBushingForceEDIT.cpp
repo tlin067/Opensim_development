@@ -466,12 +466,22 @@ void CoupledBushingForceEDIT::computeForce(const SimTK::State& s,
 
 	// F = (dq0 - A)^i * (dq1 - B)^j * (dq2 - C)^k = general nonlinear functional description
 	// to specify A, B, C could use same get_function() term... where function is a Constant
+	//fk_edit[0] = get_m_function11().calcValue(SimTK::Vector(1,dq[0]) ); // = 0
+	//fk_edit[1] = get_m_function22().calcValue(SimTK::Vector(1,dq[1]) ); // = 0
+	//fk_edit[2] = get_m_function33().calcValue(SimTK::Vector(1,dq[2]) ) + get_f_function34().calcValue(SimTK::Vector(1,dq[3]) ) + get_f_function35().calcValue(SimTK::Vector(1,dq[4]) );
+	//fk_edit[3] = get_m_function43().calcValue(SimTK::Vector(1,dq[2]) ) + get_f_function44().calcValue(SimTK::Vector(1,dq[3]) ) + get_f_function45().calcValue(SimTK::Vector(1,dq[4]) );
+	//fk_edit[4] = get_m_function53().calcValue(SimTK::Vector(1,dq[2]) ) + get_f_function54().calcValue(SimTK::Vector(1,dq[3]) ) + get_f_function55().calcValue(SimTK::Vector(1,dq[4]) );
+	//fk_edit[5] = get_f_function66().calcValue(SimTK::Vector(1,dq[3]) ); // = 0
+	
 	fk_edit[0] = get_m_function11().calcValue(SimTK::Vector(1,dq[0]) ); // = 0
 	fk_edit[1] = get_m_function22().calcValue(SimTK::Vector(1,dq[1]) ); // = 0
-	fk_edit[2] = get_m_function33().calcValue(SimTK::Vector(1,dq[2]) ) + get_f_function34().calcValue(SimTK::Vector(1,dq[3]) ) + get_f_function35().calcValue(SimTK::Vector(1,dq[4]) );
-	fk_edit[3] = get_m_function43().calcValue(SimTK::Vector(1,dq[2]) ) + get_f_function44().calcValue(SimTK::Vector(1,dq[3]) ) + get_f_function45().calcValue(SimTK::Vector(1,dq[4]) );
-	fk_edit[4] = get_m_function53().calcValue(SimTK::Vector(1,dq[2]) ) + get_f_function54().calcValue(SimTK::Vector(1,dq[3]) ) + get_f_function55().calcValue(SimTK::Vector(1,dq[4]) );
-	fk_edit[5] = get_f_function66().calcValue(SimTK::Vector(1,dq[3]) ); // = 0
+	fk_edit[2] = (pow((dq[2] - get_m_function33().calcValue(SimTK::Vector(0))),1))*(pow((dq[3] - get_f_function34().calcValue(SimTK::Vector(0))),1))*(pow((dq[4] - get_f_function35().calcValue(SimTK::Vector(0))),1));
+	fk_edit[3] = (pow((dq[2] - get_m_function43().calcValue(SimTK::Vector(0))),1))*(pow((dq[3] - get_f_function44().calcValue(SimTK::Vector(0))),1))*(pow((dq[4] - get_f_function45().calcValue(SimTK::Vector(0))),1));
+	fk_edit[4] = (pow((dq[2] - get_m_function53().calcValue(SimTK::Vector(0))),1))*(pow((dq[3] - get_f_function54().calcValue(SimTK::Vector(0))),1))*(pow((dq[4] - get_f_function55().calcValue(SimTK::Vector(0))),1));
+	fk_edit[5] = get_f_function66().calcValue(SimTK::Vector(1,dq[5]) ); // = 0
+	
+	//cout<<"\n\nfk_edit: "<< fk_edit;
+	//cout<<"\n\ndq: "<<dq;
 
 	//// Add cross terms to dq so can recalulate force
 	//Vec<21> dq_cross(0); // for ALL cross terms vector needs to be length 2^6 - 1 = 

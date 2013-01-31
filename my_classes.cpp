@@ -2,19 +2,20 @@
 #include "CoupledBushingForceEDIT.h"
 extern double bestSoFar;
 extern int stepCount;
-#include "Exponential.h"
+#include "Force_Plugin\FunctionBasedBushingForce.h"
+#include "ArbNonLinear.h"
 
 /* ################################################## */
 // SIMULATION TOOLS OBJECTS
 SimTools::SimTools(){}
 
 
-double SimTools::Calc_rms_VERSION2(Storage& data_trc, double& initialTime, double& finalTime, Array<Array<double>>& pk_data)
+double SimTools::Calc_rms_VERSION2(Storage& data_trc, double& initialTime, double& finalTime, Array<Array<double> >& pk_data)
 {
 
 
 	// Read trc storage object and insert data into 2D array for comparison with point kinematic data
-	Array<Array<double>> trc_data(0,18);
+	Array<Array<double> > trc_data(0,18);
 	// NOTE: only comparing the markers on the head so the index is offset by 12 to account for the first
 	// 4 markers in the trc file being the prescribed spine markers.
 	for(int i =12;i<(12+3*6);i++)
@@ -54,7 +55,7 @@ double SimTools::Calc_rms_VERSION2(Storage& data_trc, double& initialTime, doubl
 	Array<double> a(0.0,6);//);
 
 	//cout<<"\n\ntrc data length:"<<trc_data[0].getSize();
-	Array<Array<double>> ed_array(a,trc_data[0].getSize());
+	Array<Array<double> > ed_array(a,trc_data[0].getSize());
 
 	// Create splines of all the simulation results so can compare with same position in trc file	
 	OpenSim::GCVSplineSet *spline_set = new OpenSim::GCVSplineSet();
@@ -339,7 +340,7 @@ Array<double> SimTools::ik_constrain_torso(OpenSim::Model& osimModel, string& ma
 	///////////////////////////////////////////////////////////////////////
 }
 
-Array<Array<double>> SimTools::RunSimulation_LIMITSTOP(OpenSim::Model& osimModel, Vector& PARAMS, double& initialTime, double& finalTime, Array<double>& ICs, const bool& save_states, string& fd, OpenSim::PointKinematics& m1h, OpenSim::PointKinematics& m2h, OpenSim::PointKinematics& m3h, OpenSim::PointKinematics& m4h, OpenSim::PointKinematics& m5h, OpenSim::PointKinematics& m6h)//, Array<double>& times)
+Array<Array<double> > SimTools::RunSimulation_LIMITSTOP(OpenSim::Model& osimModel, Vector& PARAMS, double& initialTime, double& finalTime, Array<double>& ICs, const bool& save_states, string& fd, OpenSim::PointKinematics& m1h, OpenSim::PointKinematics& m2h, OpenSim::PointKinematics& m3h, OpenSim::PointKinematics& m4h, OpenSim::PointKinematics& m5h, OpenSim::PointKinematics& m6h)//, Array<double>& times)
 	//const double& ti, const double& tf, const OpenSim::Storage& st)
 {
 
@@ -586,7 +587,7 @@ Array<Array<double>> SimTools::RunSimulation_LIMITSTOP(OpenSim::Model& osimModel
 	int no_markers = osimModel.getMarkerSet().getSize();
 
 	// Declare 2D array with all pk analysis results in it. Can then directly compare with trc data
-	Array<Array<double>> a(0,3*no_markers+1);
+	Array<Array<double> > a(0,3*no_markers+1);
 	double resample_dt = 0.01;
 
 	// Store marker 1 simulation results
@@ -700,63 +701,62 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	// in validate model so model can be changed
 	osimModel.invalidateSystem();
 	
-	//%%%%%%%%%%%%%%%%%%%%%%%%%//
-	// PARAMETERS TO USE
-	//double ThetaStar = PARAMS[0];
-	//Vec3 k1(PARAMS[1]);
-	//double k2 = PARAMS[2]*SimTK::Pi/180;
-	//Vec3 Rdamping(10);//PARAMS[3]);
-	//Vec3 Tk1(0); // translational dof stiffness
-	//Vec3 Tdamping(0);//PARAMS[3]); // translational dof damping
-	
-	//// Define position in body 1 (p1), position in body 2 (p2), orientation in body 1 (o1), orientation in  body 2 (o2)
-	//// These are position and orientation os joints wrt bodies. Can set to be constant throughout...
-	//Vec3 p1bushing(0),p2bushing(0),o1(0),o2(0);
-	//double transition = 2.0;
-
 	double vert_mass = 0.018;
-	double head_mass = 0.35;//PARAMS[4];
+	double head_mass = PARAMS[21];
 	
-	//o1 = Vec3(0,0,PARAMS[3]); // bushing offset
-	//%%%%%%%%%%%%%%%%%%%%%%%%%//
-
-	//%%%%%%%%%%%%%%%%%%%%%%%%%//
-	// add stiffness matrix bushing force.....??
-	//osimModel.updForceSet().remove(0);
-	//osimModel.updForceSet().remove(0);
-	//BodySet& bodyset = osimModel.updBodySet();
-	//OpenSim::Body& lower = bodyset.get("t2");
-	//OpenSim::Body& upper = bodyset.get("sk");
-	//SimTK::Mat66 K(1), D(1);
-	//K= 40;
-	//D = 10;
-	////CB = coupled bushing position i and orientation i
-	//Vec3 CBp1(0),CBo1(0),CBp2(0),CBo2(0);
-
-	//CoupledBushingForce* F = new CoupledBushingForce(lower.getName(),CBp1,CBo1,upper.getName(),CBp2,CBo2,K,D);
-	//F->setName("CoupledBushing1");
-	//K.row(0) = 60;
-	//K.row(1) = 80;
-	//K(5,0) = 99;
-	//D(5,0) = 99;
-	//cout<<"\n\nK: "<<K;
-	//F->setStiffness(K);
-	//F->setDamping(D);
-	//osimModel.addForce(F);
-	
-	////
-	//OpenSim::Function* f1 = new OpenSim::LinearFunction(50,0.0);
-	//OpenSim::Function* t1 = new OpenSim::LinearFunction(50,0.0);
 
 	////to edit exisitng coupledBushing...
 	ForceSet& force_set = osimModel.updForceSet();
 	//cout<<"\n\nforce name:"<<force_set;
+      //  + get_m_x_theta_z_function().calcValue(SimTK::Vector(1,dq[2]) )
+        //+ get_m_x_t_x_function().calcValue(SimTK::Vector(1,dq[3]) )
+        //+ get_m_x_t_y_function().calcValue(SimTK::Vector(1,dq[4]) )
+	double A11,A12,A13,A21,A22,A23,A31,A32,A33,N11,N12,N13,N21,N22,N23,N31,N32,N33,B1,B2,B3;
+
+	A11 = PARAMS[0]; A12 = PARAMS[1]; A13 = PARAMS[2]; 
+	A21 = PARAMS[3]; A22 = PARAMS[4]; A23 = PARAMS[5]; 
+	A31 = PARAMS[6]; A32 = PARAMS[7]; A33 = PARAMS[8];
+
+	N11 = PARAMS[9]; N12 = PARAMS[10]; N13 = PARAMS[11]; 
+	N21 = PARAMS[12]; N22 = PARAMS[13]; N23 = PARAMS[14]; 
+	N31 = PARAMS[15]; N32 = PARAMS[16]; N33 = PARAMS[17]; 
+
+	B1 = PARAMS[18]; B2 = PARAMS[19]; B3 = PARAMS[20]; 
 	
-	((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF33((OpenSim::Function&)OpenSim::Exponential(PARAMS[0],PARAMS[1],PARAMS[2]));
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_m_z_theta_z_function(OpenSim::ArbNonLinear(A11,B1,N11));
+		//OpenSim::LinearFunction(PARAMS[0],0));
+		//setF33((const OpenSim::Function&)OpenSim::Constant(PARAMS[0]));
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_m_z_t_x_function(OpenSim::ArbNonLinear(A12,B1,N12));
+	//OpenSim::LinearFunction(PARAMS[1],0));
+	//F34((const OpenSim::Function&)OpenSim::Constant(PARAMS[1]));
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_m_z_t_y_function(OpenSim::ArbNonLinear(A13,B1,N13));
+	//OpenSim::LinearFunction(PARAMS[2],0));
+	//F35((const OpenSim::Function&)OpenSim::Constant(PARAMS[2]));
+	
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_f_x_theta_z_function(OpenSim::ArbNonLinear(A21,0,N21));
+	//OpenSim::LinearFunction(PARAMS[3],0));
+	//F43((const OpenSim::Function&)OpenSim::Constant(PARAMS[3]));
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_f_x_t_x_function(OpenSim::ArbNonLinear(A22,B2,N22));
+	//OpenSim::LinearFunction(PARAMS[4],0));
+	//F44((const OpenSim::Function&)OpenSim::Constant(PARAMS[4]));
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_f_x_t_y_function(OpenSim::ArbNonLinear(A23,0,N23));
+	//OpenSim::LinearFunction(PARAMS[5],0));
+	//F45((const OpenSim::Function&)OpenSim::Constant(PARAMS[5]));
+
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_f_y_theta_z_function(OpenSim::ArbNonLinear(A31,0,N31));
+	//OpenSim::LinearFunction(PARAMS[6],0));
+	//F53((const OpenSim::Function&)OpenSim::Constant(PARAMS[6]));
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_f_y_t_x_function(OpenSim::ArbNonLinear(A32,0,N32));
+	//OpenSim::LinearFunction(PARAMS[7],0));
+	//F54((const OpenSim::Function&)OpenSim::Constant(PARAMS[7]));
+	((OpenSim::FunctionBasedBushingForce*)&force_set.get("CoupledBushing1"))->set_f_y_t_y_function(OpenSim::ArbNonLinear(A33,B3,N33));
+	//OpenSim::LinearFunction(PARAMS[8],0));
+	//F55((const OpenSim::Function&)OpenSim::Constant(PARAMS[8]));
+
 	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setF34((OpenSim::Function&)OpenSim::Constant(0));//:Constant(0.0));
 	//((OpenSim::CoupledBushingForce*)&force_set.get("CoupledBushing1"))->setF35((OpenSim::Function&)OpenSim::Constant(0.0));
-	((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF44((OpenSim::Function&)OpenSim::Exponential(PARAMS[3],PARAMS[4],PARAMS[5]));
-	((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF55((OpenSim::Function&)OpenSim::Exponential(PARAMS[6],PARAMS[7],PARAMS[8]));
+	//((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF44((OpenSim::Function&)OpenSim::Exponential(PARAMS[3],PARAMS[4],PARAMS[5]));
+	//((OpenSim::CoupledBushingForceEDIT*)&force_set.get("CoupledBushing1"))->setF55((OpenSim::Function&)OpenSim::Exponential(PARAMS[6],PARAMS[7],PARAMS[8]));
 	//%%%%%%%%%%%%%%%%%%%%%%%%%//
 
 	
@@ -852,7 +852,7 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	int no_markers = osimModel.getMarkerSet().getSize();
 
 	// Declare 2D array with all pk analysis results in it. Can then directly compare with trc data
-	Array<Array<double>> a(0,3*no_markers+1);
+	Array<Array<double> > a(0,3*no_markers+1);
 	double resample_dt = 0.01;
 
 	// Store marker 1 simulation results
@@ -943,7 +943,7 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	
 
 	// Read trc storage object and insert data into 2D array for comparison with point kinematic data
-	Array<Array<double>> trc_data(0,18);
+	Array<Array<double> > trc_data(0,18);
 	// NOTE: only comparing the markers on the head so the index is offset by 12 to account for the first
 	// 4 markers in the trc file being the prescribed spine markers.
 	for(int i =12;i<(12+3*6);i++)
@@ -977,7 +977,7 @@ double SimTools::RunSimulation_wRMS(Storage& data_trc, OpenSim::Model& osimModel
 	Array<double> init(0.0,6);//);
 
 	//cout<<"\n\ntrc data length:"<<trc_data[0].getSize();
-	Array<Array<double>> ed_array(init,trc_data[0].getSize());
+	Array<Array<double> > ed_array(init,trc_data[0].getSize());
 
 	// Create splines of all the simulation results so can compare with same position in trc file	
 	OpenSim::GCVSplineSet *spline_set = new OpenSim::GCVSplineSet();

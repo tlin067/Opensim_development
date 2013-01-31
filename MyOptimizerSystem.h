@@ -16,7 +16,7 @@ class MyOptimizerSystem : public OptimizerSystem{
 public:
 	
 	///* Constructor class. Parameters passed are accessed in the objectiveFunc() class. */CoordinateCouplerConstraint& FE21_c,  FE21_c(FE21_c),  Storage& data_trc
-	MyOptimizerSystem(int& numParams, Model& osimModel, Storage& data_trc, double& ti, double& tf, Array<double>& ICs, OpenSim::PointKinematics& m1h, OpenSim::PointKinematics& m2h, OpenSim::PointKinematics& m3h, OpenSim::PointKinematics& m4h, OpenSim::PointKinematics& m5h, OpenSim::PointKinematics& m6h, string& output_fd);
+	MyOptimizerSystem(int& numParams, Model& osimModel, Storage& data_trc, double& ti, double& tf, Array<double>& ICs, string& output_fd);
 	int objectiveFunc(  const Vector &newGuess, const bool new_coefficients, Real& f ) const; 
 	int gradientFunc( const Vector &newGuess, bool new_coefficients, Vector &gradient ) const;
 	
@@ -36,12 +36,7 @@ protected:
 	double& ti;
 	double& tf;
 	OpenSim::Array<double>& ICs;
-	OpenSim::PointKinematics& m1h; 
-	OpenSim::PointKinematics& m2h; 
-	OpenSim::PointKinematics& m3h; 
-	OpenSim::PointKinematics& m4h; 
-	OpenSim::PointKinematics& m5h; 
-	OpenSim::PointKinematics& m6h; 
+	/*OpenSim::AnalysisSet& AnalysisSet;*/
 	OpenSim::CoordinateLimitForce& LIMIT_FORCE;
 	string& output_fd;
 	
